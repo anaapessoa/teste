@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localização do Pet</title>
+    <!-- Adiciona os scripts do Firebase (versão modular) -->
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        // Configuração do Firebase (substitua pelos seus dados)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAAJetNCdZeWlvz-HdAQOV50Xi9mUHQuCM",
+            authDomain: "teste-localizacao2.firebaseapp.com",
+            projectId: "teste-localizacao2",
+            storageBucket: "teste-localizacao2.firebasestorage.app",
+            messagingSenderId: "1078137567198",
+            appId: "1:1078137567198:web:e180af368dcf26bb8b8f4f",
+            measurementId: "G-6N9L4X13CB"
+        };
+
+        // Inicializa o Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Função para obter a localização
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendLocation, showError);
+            } else {
+                alert("Geolocalização não é suportada por este dispositivo.");
+            }
+        }
+
+        // Função para enviar a localização via WhatsApp
+        async function sendLocation(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            // Link do Google Maps com a localização
+            const mapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+            // Obtém o número de telefone do Firestore
+            try {
+                const contatoRef = doc(db, 'contatos', 'dono'); // Referência ao documento
+                const docSnap = await getDoc(contatoRef); // Busca o documento
+
+                if (docSnap.exists()) {
+                    const phoneNumber = docSnap.data().telefone; // Número do dono
+                    console.log('Número do dono:', phoneNumber); // Para depuração
+
+                    // Mensagem que será enviada
+                    const message = `Olá, encontrei seu pet! Aqui está a localização: ${mapsLink}`;
+
+                    // Link do WhatsApp com a mensagem
+                    const whatsappLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+                    // Redireciona para o WhatsApp
+                    window.location.href = whatsappLink;
+                } else {
+                    alert('Número do dono não encontrado no banco de dados.');
+                }
+            } catch (error) {
+                console.error('Erro ao buscar número no Firestore:', error);
+                alert('Erro ao buscar número do dono. Tente novamente.');
+            }
+        }
+
+        // Função para tratar erros de geolocalização
+        function showError(error) {
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("Permissão de localização negada. Por favor, habilite a localização.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Localização indisponível.");
+                    break;
+                case error.TIMEOUT:
+                    alert("Tempo de espera para obter a localização expirado.");
+                    break;
+                default:
+                    alert("Erro desconhecido ao obter a localização.");
+            }
+        }
+
+        // Inicia a obtenção da localização ao carregar a página
+        window.onload = getLocation;
+    </script>
+</head>
+<body>
+    <h1>Obrigado por ajudar!</h1>
+    <p>Estamos enviando a localização para o dono do pet...</p>
+</body>
+</html>
